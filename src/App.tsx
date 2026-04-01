@@ -11,10 +11,10 @@ import Assistant from '@/pages/Assistant'
 import AccountSettings from '@/pages/AccountSettings'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { setAuth } from '@/store/slices/authSlice'
-import { setAgents } from '@/store/slices/agentsSlice'
-import { setServers } from '@/store/slices/mcpServersSlice'
+import { fetchAgents } from '@/store/slices/agentsSlice'
+import { fetchServers } from '@/store/slices/mcpServersSlice'
 
-// Demo data for MVP — seed some agents, servers, workflows so the UI isn't empty
+// Demo data for MVP — seeds MCP servers & workflows (agents now come from data_server)
 import { seedDemoData } from '@/data/seed'
 
 function AppContent() {
@@ -42,7 +42,12 @@ function AppContent() {
   }, [isAuthenticated, dispatch])
 
   useEffect(() => {
-    seedDemoData(dispatch)
+    // Fetch real agents from data_server, fall back to seed data on failure
+    dispatch(fetchAgents()).unwrap().catch(() => {
+      seedDemoData(dispatch)
+    })
+    // Fetch real MCP servers from data_server
+    dispatch(fetchServers())
   }, [dispatch])
 
   useEffect(() => {

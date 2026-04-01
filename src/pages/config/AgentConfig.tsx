@@ -119,7 +119,7 @@ export default function AgentConfig() {
   }
 
   return (
-    <div className="p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
+    <div className="p-6 lg:p-10 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Agents</h1>
@@ -135,34 +135,46 @@ export default function AgentConfig() {
           No agents configured yet. Click "Add Agent" to get started.
         </div>
       ) : (
-        <div className="space-y-3">
+       
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {agents.map((agent) => (
-            <Card key={agent.id} className="border border-border">
-              <CardContent className="flex items-center gap-4 p-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-medium text-foreground">{agent.title}</h3>
-                    <StatusDot status={agent.status} />
-                    <span className="text-xs text-muted-foreground capitalize">{agent.status}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-0.5 truncate">{agent.description}</p>
-                  <p className="text-xs text-muted-foreground mt-1 font-mono">{agent.url}</p>
-                  {agent.capabilities.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {agent.capabilities.map((c) => (
-                        <Badge key={c} variant="outline" className="text-xs font-normal">{c}</Badge>
-                      ))}
+            <Card key={agent.id} className="border border-border flex flex-col">
+              {/* Adjusted CardContent to stack vertically */}
+              <CardContent className="flex flex-col h-full gap-3 p-4">
+                
+                {/* Header: Title, Status & Actions */}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-medium text-foreground truncate">{agent.title}</h3>
+                      <StatusDot status={agent.status} />
                     </div>
-                  )}
+                    <span className="text-xs text-muted-foreground capitalize mt-0.5 block">{agent.status}</span>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0 -mt-1 -mr-2">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(agent)}>
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(agent.id)}>
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(agent)}>
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => setDeleteId(agent.id)}>
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
+
+                {/* Body: Description & URL */}
+                <div className="flex-1 space-y-2">
+                  <p className="text-sm text-muted-foreground line-clamp-2">{agent.description}</p>
+                  <p className="text-xs text-muted-foreground font-mono truncate">{agent.url}</p>
                 </div>
+
+                {/* Footer: Capabilities */}
+                {agent.capabilities.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-auto pt-2">
+                    {agent.capabilities.map((c) => (
+                      <Badge key={c} variant="outline" className="text-xs font-normal">{c}</Badge>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}

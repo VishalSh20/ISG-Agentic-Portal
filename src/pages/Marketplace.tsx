@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Search, Filter } from 'lucide-react'
+import { Search, Filter, RefreshCw } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   Select,
@@ -11,7 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useAppSelector } from '@/store'
+import { useAppSelector, useAppDispatch } from '@/store'
+import { updateAgentStatus } from '@/store/slices/agentsSlice'
+import { checkAgentHealth } from '@/api/agents'
 
 function StatusDot({ status }: { status: string }) {
   const color =
@@ -25,8 +28,28 @@ function StatusDot({ status }: { status: string }) {
 
 export default function Marketplace() {
   const agents = useAppSelector((s) => s.agents.agents)
+  const dispatch = useAppDispatch()
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<string>('all')
+  const [checking, setChecking] = useState(false)
+
+  const refreshHealth = useCallback(async () => {
+    setChecking(true)
+    await Promise.all(
+      agents.map(async (agent) => {
+        if (!agent.url) return
+        const status = await checkAgentHealth(agent.url)
+        dispatch(updateAgentStatus({ id: agent.id, status }))
+      })
+    )
+    setChecking(false)
+  }, [agents, dispatch])
+
+  // Check health on mount
+  useEffect(() => {
+    if (agents.length > 0) refreshHealth()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agents.length])
 
   const categories = useMemo(() => {
     const cats = new Set(agents.map((a) => a.category).filter(Boolean))
@@ -47,10 +70,18 @@ export default function Marketplace() {
   return (
     <div className="p-6 lg:p-10 max-w-6xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Marketplace</h1>
-        <p className="text-muted-foreground mt-1">
-          Browse and discover available AI agents
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Marketplace</h1>
+            <p className="text-muted-foreground mt-1">
+              Browse and discover available AI agents
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={refreshHealth} disabled={checking}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${checking ? 'animate-spin' : ''}`} />
+            {checking ? 'Checking...' : 'Refresh Status'}
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -99,21 +130,11 @@ export default function Marketplace() {
                 <CardContent className="p-5 space-y-3">
                   <div className="flex items-start justify-between">
                     <h3 className="font-semibold text-foreground">{agent.title}</h3>
-                    <div className="flex items-center gap-1.5">
-                      <StatusDot status={agent.status} />
-                      <span className="text-xs text-muted-foreground capitalize">
-                        {agent.status}
-                      </span>
-                    </div>
                   </div>
                   <p className="text-sm text-muted-foreground line-clamp-2">
                     {agent.description}
                   </p>
-                  {agent.category && (
-                    <Badge variant="secondary" className="text-xs">
-                      {agent.category}
-                    </Badge>
-                  )}
+                  
                   {agent.capabilities.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
                       {agent.capabilities.slice(0, 4).map((cap) => (

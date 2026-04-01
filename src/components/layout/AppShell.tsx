@@ -74,18 +74,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 h-14 border-b border-border">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-            <Bot className="w-4 h-4 text-primary-foreground" />
-          </div>
+          <img src="/Cognizant.svg" alt="Cognizant" className="w-8 h-8 shrink-0" />
           {!collapsed && (
-            <span className="font-semibold text-sm text-foreground truncate">
+            <span className="font-semibold text-sm text-foreground truncate" style={{ fontFamily: 'var(--font-heading)' }}>
               ISG Agentic Core
             </span>
           )}
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
+        <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1" style={{ fontFamily: 'var(--font-heading)' }}>
           {NAV_ITEMS.map((item) => {
             if (item.children) {
               const isActive = location.pathname.startsWith('/config')
