@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Bot, Store, Settings, MessageSquare, GitBranch, Server, ArrowRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAppSelector } from '@/store'
+import { marketplaceContent } from '@/data/marketplace_content'
 
 const features = [
   {
@@ -42,8 +43,11 @@ const features = [
 export default function Home() {
   const navigate = useNavigate()
   const user = useAppSelector((s) => s.auth.user)
-  const agentCount = useAppSelector((s) => s.agents.agents.length)
-  const serverCount = useAppSelector((s) => s.mcpServers.servers.length)
+  // TODO: Restore dynamic counts from Redux when backend fetching is re-enabled
+  // const agentCount = useAppSelector((s) => s.agents.agents.length)
+  // const serverCount = useAppSelector((s) => s.mcpServers.servers.length)
+  const agentCount = marketplaceContent.agents.length
+  const serverCount = marketplaceContent.mcp_servers.length
   const workflowCount = useAppSelector((s) => s.workflows.workflows.length)
 
   const greeting = () => {
