@@ -69,3 +69,7 @@ Currently in demo/dev mode — `App.tsx` dispatches a hardcoded "Lukas" demo use
 ## UI Components
 
 Uses shadcn/ui with the **Radix Nova** preset (`components.json`). Add new shadcn components via `npx shadcn@latest add <component>`.
+
+## Git Workflow
+
+After any significant change or any amount of change that warrants persisting, commit and push to the remote repository immediately. Do not wait for the user to ask — proactively commit and push once the change is complete and verified.
