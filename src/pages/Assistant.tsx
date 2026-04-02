@@ -1,16 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
-import { Send, Plus, Trash2, MessageSquare, Loader2 } from 'lucide-react'
+import { Send, MessageSquare, Loader2 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
-  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
-  AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -18,7 +12,7 @@ import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useAppDispatch, useAppSelector } from '@/store'
-import { createThread, sendMessageStream, switchThread, deleteThread } from '@/store/slices/chatSlice'
+import { createThread, sendMessageStream } from '@/store/slices/chatSlice'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
@@ -75,7 +69,7 @@ function ChatBubble({ role, content }: { role: string; content: string }) {
     <div className={cn('flex', isUser ? 'justify-end' : 'justify-start')}>
       <div
         className={cn(
-          'max-w-[80%] rounded-2xl px-4 py-3 text-sm',
+          'max-w-[80%] rounded-2xl px-5 py-3.5 text-[0.938rem] leading-relaxed',
           isUser
             ? 'bg-primary text-primary-foreground'
             : 'bg-card border border-border',
@@ -84,7 +78,7 @@ function ChatBubble({ role, content }: { role: string; content: string }) {
         {isUser ? (
           <p className="whitespace-pre-wrap">{content}</p>
         ) : (
-          <div className="prose prose-sm dark:prose-invert max-w-none">
+          <div className="markdown-body max-w-none">
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
               {content}
             </ReactMarkdown>
@@ -122,7 +116,6 @@ export default function Assistant() {
   const [selectedWorkflow, setSelectedWorkflow] = useState(userPrefs?.defaultWorkflowId || '')
   const [selectedAgent, setSelectedAgent] = useState<string>(userPrefs?.defaultAgentId || ORCHESTRATOR_AGENT_ID)
   const [input, setInput] = useState('')
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   /* auto-scroll on new messages */
@@ -158,10 +151,6 @@ export default function Assistant() {
     }
   }
 
-  const handleNewThread = async () => {
-    await dispatch(createThread({ agentId: selectedAgent, workflowId: selectedWorkflow || undefined })).unwrap()
-  }
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -176,70 +165,6 @@ export default function Assistant() {
         We use h-full so the chat fills the available viewport without fighting the shell layout.
       */}
       <div className="flex h-full">
-        {/* ── Thread sidebar ── */}
-        <aside className="hidden md:flex min-w-64 shrink-0 flex-col border-r border-border bg-sidebar sticky top-0">
-          {/* New chat button */}
-          <div className="p-3">
-            <Button variant="outline" className="w-full justify-start gap-2" onClick={handleNewThread}>
-              <Plus className="size-4" />
-              New Chat
-            </Button>
-          </div>
-
-          <Separator />
-
-          {/* Thread list */}
-          <ScrollArea className="flex-1">
-            <div className="p-2 space-y-0.5">
-              {threads.map((t) => (
-                <div
-                  key={t.id}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === 'Enter') dispatch(switchThread(t.id)) }}
-                  onClick={() => dispatch(switchThread(t.id))}
-                  className={cn(
-                    'group flex items-center gap-2 rounded-lg px-3 py-2 text-sm cursor-pointer transition-colors',
-                    t.id === activeThreadId
-                      ? 'bg-accent text-foreground font-medium'
-                      : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-                  )}
-                >
-                  <MessageSquare className="size-3.5 shrink-0" />
-                  <span className="flex-1 truncate">{t.title}</span>
-                  <span className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          aria-label={`Delete chat: ${t.title}`}
-                          onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(t.id) }}
-                          className="rounded p-0.5 hover:bg-destructive/10"
-                        >
-                          <Trash2 className="size-3.5 text-muted-foreground hover:text-destructive" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="left">Delete</TooltipContent>
-                    </Tooltip>
-                  </span>
-                </div>
-              ))}
-
-              {threads.length === 0 && (
-                <p className="py-8 text-center text-xs text-muted-foreground">No conversations yet</p>
-              )}
-            </div>
-          </ScrollArea>
-
-          <Separator />
-
-          {/* Footer */}
-          <div className="p-3">
-            <p className="text-xs text-muted-foreground">
-              Agent: {AGENT_OPTIONS.find((a) => a.id === selectedAgent)?.label ?? selectedAgent}
-            </p>
-          </div>
-        </aside>
-
         {/* ── Chat area ── */}
         <div className="flex flex-1 flex-col min-w-0">
           {/* Toolbar: agent + workflow selectors */}
@@ -270,7 +195,7 @@ export default function Assistant() {
 
           {/* Messages */}
           <ScrollArea className="flex-1 overflow-y-scroll">
-            <div className="mx-auto max-w-3xl space-y-6 p-6">
+            <div className="mx-auto max-w-[60rem] space-y-6 p-6">
               {!activeThread || activeThread.messages.length === 0 ? (
                 <EmptyState />
               ) : (
@@ -285,7 +210,7 @@ export default function Assistant() {
 
           {/* Input area */}
           <div className="border-t border-border px-4 py-3">
-            <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-xl border border-border bg-card p-2">
+            <div className="mx-auto flex max-w-[52.8rem] items-end gap-2 rounded-xl border border-border bg-card p-2">
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -313,27 +238,6 @@ export default function Assistant() {
         </div>
       </div>
 
-      {/* ── Delete confirmation dialog ── */}
-      <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => { if (!open) setDeleteConfirmId(null) }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this chat?</AlertDialogTitle>
-            <AlertDialogDescription>This conversation will be permanently deleted.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                if (deleteConfirmId) dispatch(deleteThread(deleteConfirmId))
-                setDeleteConfirmId(null)
-              }}
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </TooltipProvider>
   )
 }

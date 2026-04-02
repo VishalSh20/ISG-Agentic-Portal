@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(NODE_TLS_REJECT_UNAUTHORIZED=0 npx shadcn@latest add resizable -y)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}
