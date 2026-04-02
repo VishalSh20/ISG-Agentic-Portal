@@ -90,7 +90,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-3">
           <img src="/Cognizant.svg" alt="Cognizant" className="w-8 h-8 shrink-0" />
           <span className="font-semibold text-sm text-foreground truncate" style={{ fontFamily: 'var(--font-heading)' }}>
-            ISG Agentic Core
+            Telecom Agentic Core
           </span>
         </div>
 

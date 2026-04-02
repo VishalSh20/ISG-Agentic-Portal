@@ -66,7 +66,7 @@ export default function Home() {
           {greeting()}, {user?.username || 'User'}
         </h1>
         <p className="text-muted-foreground text-lg">
-          Welcome to the ISG Agentic Core Portal. Manage your AI agents, workflows, and more.
+          Welcome to the Telecom Agentic Core Portal. Manage your AI agents, workflows, and more.
         </p>
       </motion.div>
 
