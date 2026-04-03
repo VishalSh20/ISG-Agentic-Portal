@@ -113,7 +113,11 @@ export default function Assistant() {
 
   const activeThread = threads.find((t) => t.id === activeThreadId) ?? null
 
-  const [selectedWorkflow, setSelectedWorkflow] = useState(userPrefs?.defaultWorkflowId || '')
+  /* Once a message has been sent, the thread's agent & workflow are locked */
+  const threadLocked = (activeThread?.messages.length ?? 0) > 0
+
+  const defaultWorkflow = userPrefs?.defaultWorkflowId || (workflows.length > 0 ? workflows[0].id : '')
+  const [selectedWorkflow, setSelectedWorkflow] = useState(defaultWorkflow)
   const [selectedAgent, setSelectedAgent] = useState<string>(userPrefs?.defaultAgentId || ORCHESTRATOR_AGENT_ID)
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -123,29 +127,31 @@ export default function Assistant() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [activeThread?.messages.length, loading, streaming])
 
-  /* sync agent selection when switching threads */
+  /* Keep selectors in sync with the active thread's stored values.
+     Only sync from threads that already have messages (i.e. are "committed").
+     Empty threads (just created by New Chat) are ignored so the user can
+     freely pick agent & workflow before sending the first message. */
   useEffect(() => {
-    if (activeThread?.agentId) {
+    if (activeThread && activeThread.messages.length > 0) {
       setSelectedAgent(activeThread.agentId)
+      setSelectedWorkflow(activeThread.workflowId || (workflows.length > 0 ? workflows[0].id : ''))
     }
-  }, [activeThread?.id])
-
-  /* sync default workflow from prefs */
-  useEffect(() => {
-    if (userPrefs?.defaultWorkflowId && !selectedWorkflow) {
-      setSelectedWorkflow(userPrefs.defaultWorkflowId)
-    }
-  }, [userPrefs?.defaultWorkflowId])
+  }, [activeThread?.id, activeThread?.messages.length])
 
   const handleSend = async () => {
     const query = input.trim()
     if (!query) return
     try {
+      const agentId = selectedAgent
+      const workflowId = agentId === MASTER_AGENT_ID ? (selectedWorkflow || undefined) : undefined
+      const selectedWf = workflows.find((w) => w.id === workflowId)
+      const systemPromptFile = selectedWf?.name
+
       if (!activeThread) {
-        await dispatch(createThread({ agentId: selectedAgent, workflowId: selectedWorkflow || undefined })).unwrap()
+        await dispatch(createThread({ agentId, workflowId })).unwrap()
       }
       setInput('')
-      await dispatch(sendMessageStream({ query, agentId: selectedAgent, workflowId: selectedWorkflow || undefined })).unwrap()
+      await dispatch(sendMessageStream({ query, agentId, workflowId, systemPromptFile })).unwrap()
     } catch {
       toast.error('Failed to send message. Please try again.')
     }
@@ -169,7 +175,7 @@ export default function Assistant() {
         <div className="flex flex-1 flex-col min-w-0">
           {/* Toolbar: agent + workflow selectors */}
           <div className="flex items-center gap-3 border-b border-border px-4 py-2">
-            <Select value={selectedAgent} onValueChange={setSelectedAgent}>
+            <Select value={selectedAgent} onValueChange={setSelectedAgent} disabled={threadLocked}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Select Agent" />
               </SelectTrigger>
@@ -180,17 +186,19 @@ export default function Assistant() {
               </SelectContent>
             </Select>
 
-            <Select value={selectedWorkflow} onValueChange={setSelectedWorkflow}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Workflow (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_none">No Workflow</SelectItem>
-                {workflows.map((w) => (
-                  <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {selectedAgent === MASTER_AGENT_ID && (
+              <Select value={selectedWorkflow} onValueChange={setSelectedWorkflow} disabled={threadLocked}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Workflow (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">No Workflow</SelectItem>
+                  {workflows.map((w) => (
+                    <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Messages */}

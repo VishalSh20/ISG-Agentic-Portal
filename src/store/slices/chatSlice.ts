@@ -90,7 +90,7 @@ export const deleteThread = createAsyncThunk('chat/deleteThread', async (threadI
 // Streaming thunk — dispatches token-by-token via appendStreamToken
 export const sendMessageStream = createAsyncThunk(
   'chat/sendMessageStream',
-  async ({ query, agentId, workflowId }: { query: string; agentId: string; workflowId?: string }, { getState, dispatch }) => {
+  async ({ query, agentId, workflowId, systemPromptFile }: { query: string; agentId: string; workflowId?: string; systemPromptFile?: string }, { getState, dispatch }) => {
     const state = getState() as RootState
     const thread = state.chat.threads.find((t) => t.id === state.chat.activeThreadId)
     if (!thread) throw new Error('No active thread')
@@ -120,6 +120,7 @@ export const sendMessageStream = createAsyncThunk(
       (token) => dispatch(chatSlice.actions.appendStreamToken({ threadId: thread.id, messageId: assistantMsgId, token })),
       thread.id,
       agentId,
+      systemPromptFile,
     )
 
     // Persist the fully assembled message
@@ -154,6 +155,9 @@ const chatSlice = createSlice({
       const thread = state.threads.find((t) => t.id === action.payload.threadId)
       const msg = thread?.messages.find((m) => m.id === action.payload.messageId)
       if (msg) msg.content += action.payload.token
+    },
+    startNewChat(state) {
+      state.activeThreadId = null
     },
   },
   extraReducers: (builder) => {
@@ -201,5 +205,5 @@ const chatSlice = createSlice({
   },
 })
 
-export const { switchThread, addMessage, updateThreadTitle, appendStreamToken } = chatSlice.actions
+export const { switchThread, addMessage, updateThreadTitle, appendStreamToken, startNewChat } = chatSlice.actions
 export default chatSlice.reducer

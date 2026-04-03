@@ -110,7 +110,7 @@ export default function WorkflowEditorPage() {
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Workflows</h1>
           <p className="text-muted-foreground mt-1">Create and manage agentic workflow step sequences</p>
         </div>
-        <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" /> Add Workflow</Button>
+        {/* <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" /> Add Workflow</Button> */}
       </div>
 
       {workflows.length === 0 ? (
@@ -127,8 +127,8 @@ export default function WorkflowEditorPage() {
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <Button variant="ghost" size="icon" onClick={() => showPreview(w)}><Eye className="w-4 h-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(w)}><Pencil className="w-4 h-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => setDeleteId(w.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                  {/* <Button variant="ghost" size="icon" onClick={() => openEdit(w)}><Pencil className="w-4 h-4" /></Button> */}
+                  {/* <Button variant="ghost" size="icon" onClick={() => setDeleteId(w.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button> */}
                 </div>
               </CardContent>
             </Card>

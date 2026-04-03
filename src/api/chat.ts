@@ -3,6 +3,7 @@ import { store } from '@/store'
 interface QueryRequest {
   query: string
   thread_id?: string
+  system_prompt_file?: string
 }
 
 interface QueryResponse {
@@ -22,9 +23,13 @@ export const chatApi = {
     query: string,
     threadId?: string,
     agentId: string = 'orchestrator',
+    systemPromptFile?: string,
   ): Promise<QueryResponse> => {
     const baseURL = getBaseUrl(agentId)
     const token = store.getState().auth.keycloakToken
+
+    const payload: QueryRequest = { query, thread_id: threadId }
+    if (systemPromptFile) payload.system_prompt_file = systemPromptFile
 
     const res = await fetch(`${baseURL}/ask-query`, {
       method: 'POST',
@@ -32,7 +37,7 @@ export const chatApi = {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ query, thread_id: threadId } as QueryRequest),
+      body: JSON.stringify(payload),
     })
 
     if (!res.ok) throw new Error(`Request failed: ${res.status}`)
@@ -44,9 +49,13 @@ export const chatApi = {
     onToken: (token: string) => void,
     threadId?: string,
     agentId: string = 'orchestrator',
+    systemPromptFile?: string,
   ): Promise<{ thread_id: string }> => {
     const baseURL = getBaseUrl(agentId)
     const token = store.getState().auth.keycloakToken
+
+    const payload: QueryRequest = { query, thread_id: threadId }
+    if (systemPromptFile) payload.system_prompt_file = systemPromptFile
 
     const res = await fetch(`${baseURL}/ask-query-stream`, {
       method: 'POST',
@@ -54,7 +63,7 @@ export const chatApi = {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ query, thread_id: threadId } as QueryRequest),
+      body: JSON.stringify(payload),
     })
 
     if (!res.ok) throw new Error(`Stream request failed: ${res.status}`)

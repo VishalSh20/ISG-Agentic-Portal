@@ -30,7 +30,7 @@ import { Separator } from '@/components/ui/separator'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { toggleDarkMode } from '@/store/slices/themeSlice'
 import { clearAuth } from '@/store/slices/authSlice'
-import { switchThread, createThread } from '@/store/slices/chatSlice'
+import { switchThread, startNewChat } from '@/store/slices/chatSlice'
 import type { NavItem } from '@/types'
 import { cn } from '@/lib/utils'
 
@@ -77,9 +77,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     navigate('/assistant')
   }
 
-  const handleNewChat = async () => {
-    const agentId = userPrefs?.defaultAgentId || 'orchestrator'
-    await dispatch(createThread({ agentId })).unwrap()
+  const handleNewChat = () => {
+    dispatch(startNewChat())
     navigate('/assistant')
   }
 

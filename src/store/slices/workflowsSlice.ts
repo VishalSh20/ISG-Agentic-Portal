@@ -4,6 +4,10 @@ import type { WorkflowFormData } from '@/types/forms'
 import { workflowsApi } from '@/api/workflows'
 import { generateId } from '@/utils/helpers'
 import { normalizeStepOrder } from '@/utils/normalizeStepOrder'
+import { staticWorkflows } from '@/data/workflow_content'
+
+// Toggle this flag to switch between static data and API-driven workflows
+const USE_STATIC_WORKFLOWS = true
 
 interface WorkflowsState {
   workflows: Workflow[]
@@ -12,12 +16,13 @@ interface WorkflowsState {
 }
 
 const initialState: WorkflowsState = {
-  workflows: [],
+  workflows: USE_STATIC_WORKFLOWS ? staticWorkflows : [],
   loading: false,
   error: null,
 }
 
 export const fetchWorkflows = createAsyncThunk('workflows/fetchAll', async () => {
+  if (USE_STATIC_WORKFLOWS) return staticWorkflows
   return await workflowsApi.getAll()
 })
 
