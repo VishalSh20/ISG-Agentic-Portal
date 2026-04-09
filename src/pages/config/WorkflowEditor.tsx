@@ -6,6 +6,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import {
+  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
+} from '@/components/ui/accordion'
+import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
 import {
@@ -34,8 +37,6 @@ export default function WorkflowEditorPage() {
   const workflows = useAppSelector((s) => s.workflows.workflows)
   const agents = useAppSelector((s) => s.agents.agents)
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [previewOpen, setPreviewOpen] = useState(false)
-  const [previewText, setPreviewText] = useState('')
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [editing, setEditing] = useState<Workflow | null>(null)
   const [form, setForm] = useState<WorkflowFormData>(emptyForm)
@@ -95,13 +96,6 @@ export default function WorkflowEditorPage() {
     setForm({ ...form, steps: normalizeStepOrder(steps as WorkflowStep[]) })
   }
 
-  const showPreview = (w: Workflow) => {
-    const agent = agents.find((a) => a.id === w.associatedAgentId) || {
-      id: '', title: 'Agent', description: 'An AI agent', url: '', healthEndpoint: '', status: 'unknown' as const, capabilities: [], createdAt: '', updatedAt: '',
-    }
-    setPreviewText(buildSystemPrompt(agent, w))
-    setPreviewOpen(true)
-  }
 
   return (
     <div className="p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
@@ -116,24 +110,38 @@ export default function WorkflowEditorPage() {
       {workflows.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground">No workflows yet.</div>
       ) : (
-        <div className="space-y-3">
+        <Accordion type="single" collapsible className="space-y-3">
           {workflows.map((w) => (
-            <Card key={w.id} className="border border-border">
-              <CardContent className="flex items-center gap-4 p-4">
-                <div className="flex-1 min-w-0">
+            <AccordionItem key={w.id} value={w.id} className="border border-border rounded-lg px-4">
+              <AccordionTrigger className="hover:no-underline py-4">
+                <div className="flex flex-col items-start text-left">
                   <h3 className="font-medium text-foreground">{w.name}</h3>
-                  <p className="text-sm text-muted-foreground mt-0.5 truncate">{w.description}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{w.steps.length} step{w.steps.length !== 1 ? 's' : ''}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">{w.description}</p>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <Button variant="ghost" size="icon" onClick={() => showPreview(w)}><Eye className="w-4 h-4" /></Button>
-                  {/* <Button variant="ghost" size="icon" onClick={() => openEdit(w)}><Pencil className="w-4 h-4" /></Button> */}
-                  {/* <Button variant="ghost" size="icon" onClick={() => setDeleteId(w.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button> */}
+              </AccordionTrigger>
+              <AccordionContent className="pb-4">
+                <div className="space-y-3">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    {w.steps.length} step{w.steps.length !== 1 ? 's' : ''}
+                  </p>
+                  <ol className="space-y-2">
+                    {w.steps.map((step, idx) => (
+                      <li key={step.id} className="flex gap-3 p-3 rounded-lg bg-muted/40 border border-border/50">
+                        <span className="text-sm font-semibold text-muted-foreground shrink-0 w-6">{idx + 1}.</span>
+                        <div className="space-y-1">
+                          <p className="text-sm text-foreground">{step.instruction}</p>
+                          {step.toolHint && (
+                            <p className="text-xs text-muted-foreground">Tool: {step.toolHint}</p>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
                 </div>
-              </CardContent>
-            </Card>
+              </AccordionContent>
+            </AccordionItem>
           ))}
-        </div>
+        </Accordion>
       )}
 
       {/* Create/Edit Dialog */}
@@ -185,14 +193,6 @@ export default function WorkflowEditorPage() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSave}>{editing ? 'Save Changes' : 'Create Workflow'}</Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Preview Dialog */}
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle>System Prompt Preview</DialogTitle></DialogHeader>
-          <pre className="text-sm bg-muted p-4 rounded-lg overflow-auto max-h-96 whitespace-pre-wrap">{previewText}</pre>
         </DialogContent>
       </Dialog>
 
