@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { toggleDarkMode } from '@/store/slices/themeSlice'
-import { updatePreferences, clearAuth } from '@/store/slices/authSlice'
+import { updatePreferences, logoutUser } from '@/store/slices/authSlice'
 
 export default function AccountSettings() {
   const dispatch = useAppDispatch()
@@ -98,7 +98,7 @@ export default function AccountSettings() {
 
       <Separator />
 
-      <Button variant="destructive" onClick={() => dispatch(clearAuth())}>
+      <Button variant="destructive" onClick={() => dispatch(logoutUser())}>
         <LogOut className="w-4 h-4 mr-2" /> Logout
       </Button>
     </div>

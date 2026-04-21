@@ -29,7 +29,7 @@ export const createThread = createAsyncThunk(
   'chat/createThread',
   async ({ agentId, workflowId }: { agentId: string; workflowId?: string }, { getState }) => {
     const state = getState() as RootState
-    const userId = state.auth.user?.keycloakId || 'anonymous'
+    const userId = state.auth.user?.id || 'anonymous'
     const now = new Date().toISOString()
     const thread: ChatThread = {
       id: generateId(),

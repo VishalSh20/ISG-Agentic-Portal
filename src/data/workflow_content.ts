@@ -24,6 +24,7 @@ export const staticWorkflows: Workflow[] = [
     createdAt: now,
     updatedAt: now,
   },
+
   {
     id: 'wf_property_damage',
     name: 'property_damage',

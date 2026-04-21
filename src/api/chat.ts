@@ -26,7 +26,7 @@ export const chatApi = {
     systemPromptFile?: string,
   ): Promise<QueryResponse> => {
     const baseURL = getBaseUrl(agentId)
-    const token = store.getState().auth.keycloakToken
+    const token = store.getState().auth.accessToken
 
     const payload: QueryRequest = { query, thread_id: threadId }
     if (systemPromptFile) payload.system_prompt_file = systemPromptFile
@@ -52,7 +52,7 @@ export const chatApi = {
     systemPromptFile?: string,
   ): Promise<{ thread_id: string }> => {
     const baseURL = getBaseUrl(agentId)
-    const token = store.getState().auth.keycloakToken
+    const token = store.getState().auth.accessToken
 
     const payload: QueryRequest = { query, thread_id: threadId }
     if (systemPromptFile) payload.system_prompt_file = systemPromptFile

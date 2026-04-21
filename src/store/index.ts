@@ -9,6 +9,7 @@ import agentsReducer from './slices/agentsSlice'
 import mcpServersReducer from './slices/mcpServersSlice'
 import workflowsReducer from './slices/workflowsSlice'
 import chatReducer from './slices/chatSlice'
+import xmlAssistReducer from './slices/xmlAssistSlice'
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -17,12 +18,13 @@ const rootReducer = combineReducers({
   mcpServers: mcpServersReducer,
   workflows: workflowsReducer,
   chat: chatReducer,
+  xmlAssist: xmlAssistReducer,
 })
 
 const persistConfig = {
   key: 'isg-agentic-core',
   storage,
-  whitelist: ['auth', 'theme', 'chat'],
+  whitelist: ['auth', 'theme', 'chat', 'xmlAssist'],
 }
 
 const persistedReducer = persistReducer(persistConfig, rootReducer)

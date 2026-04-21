@@ -8,29 +8,21 @@ import {
   Server,
   GitBranch,
   MessageSquare,
+  FileCode2,
   UserIcon,
-  Moon,
-  Sun,
   ChevronDown,
   ChevronRight,
-  LogOut,
   PanelLeftClose,
   PanelLeft,
   Plus,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
+import AppHeader from '@/components/layout/AppHeader'
 import { useAppDispatch, useAppSelector } from '@/store'
-import { toggleDarkMode } from '@/store/slices/themeSlice'
-import { clearAuth } from '@/store/slices/authSlice'
 import { switchThread, startNewChat } from '@/store/slices/chatSlice'
+import { switchSession, startNewSession } from '@/store/slices/xmlAssistSlice'
 import type { NavItem } from '@/types'
 import { cn } from '@/lib/utils'
 
@@ -49,6 +41,7 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   { key: 'assistant', label: 'AI Assistant', icon: MessageSquare, path: '/assistant' },
+  { key: 'xml-assist', label: 'XML Assist', icon: FileCode2, path: '/xml-assist' },
   { key: 'account', label: 'Account Settings', icon: UserIcon, path: '/account' },
 ]
 
@@ -59,18 +52,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const user = useAppSelector((s) => s.auth.user)
   const threads = useAppSelector((s) => s.chat.threads)
   const activeThreadId = useAppSelector((s) => s.chat.activeThreadId)
-  const userPrefs = useAppSelector((s) => s.auth.user?.preferences)
+  const xmlSessions = useAppSelector((s) => s.xmlAssist.sessions)
+  const activeXmlSessionId = useAppSelector((s) => s.xmlAssist.activeSessionId)
 
   const [collapsed, setCollapsed] = useState(false)
   const [configOpen, setConfigOpen] = useState(true)
   const [assistantOpen, setAssistantOpen] = useState(false)
+  const [xmlAssistOpen, setXmlAssistOpen] = useState(false)
   const location = useLocation()
 
   const recentThreads = threads.slice(0, 5)
-
-  const handleLogout = () => {
-    dispatch(clearAuth())
-  }
+  const recentXmlSessions = xmlSessions.slice(0, 5)
 
   const handleThreadClick = (threadId: string) => {
     dispatch(switchThread(threadId))
@@ -82,52 +74,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     navigate('/assistant')
   }
 
+  const handleXmlSessionClick = (sessionId: string) => {
+    dispatch(switchSession(sessionId))
+    navigate('/xml-assist')
+  }
+
+  const handleNewXmlSession = () => {
+    dispatch(startNewSession())
+    navigate('/xml-assist')
+  }
+
   return (
     <div className={cn('flex flex-col h-screen', darkMode && 'dark')}>
-      {/* ── Full-width header ── */}
-      <header className="flex items-center justify-between h-14 px-4 border-b border-border bg-background shrink-0">
-        <div className="flex items-center gap-3">
-          <img src="/Cognizant.svg" alt="Cognizant" className="w-8 h-8 shrink-0" />
-          <span className="font-semibold text-sm text-foreground truncate" style={{ fontFamily: 'var(--font-heading)' }}>
-            Telecom Agentic Core
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => dispatch(toggleDarkMode())}
-            className="text-muted-foreground"
-          >
-            {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </Button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                    {user?.username?.charAt(0).toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem asChild>
-                <NavLink to="/account" className="flex items-center gap-2">
-                  <UserIcon className="w-4 h-4" />
-                  Account Settings
-                </NavLink>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </header>
+      <AppHeader />
 
       {/* ── Sidebar + page content ── */}
       <div className="flex flex-1 min-h-0">
@@ -261,6 +220,73 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                               >
                                 <MessageSquare className="w-3.5 h-3.5 shrink-0" />
                                 <span className="truncate">{thread.title}</span>
+                              </button>
+                            ))}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              }
+
+              // XML Assist with recent sessions dropdown
+              if (item.key === 'xml-assist') {
+                const isActive = location.pathname === '/xml-assist'
+                return (
+                  <div key={item.key}>
+                    <div className="flex items-center">
+                      <NavLink
+                        to={item.path}
+                        end
+                        className={cn(
+                          'flex items-center gap-3 flex-1 rounded-lg px-3 py-2 text-sm transition-colors',
+                          isActive
+                            ? 'text-foreground bg-accent font-medium'
+                            : 'text-sidebar-foreground hover:bg-accent hover:text-foreground'
+                        )}
+                      >
+                        <item.icon className="w-4 h-4 shrink-0" />
+                        {!collapsed && <span className="flex-1 text-left">{item.label}</span>}
+                      </NavLink>
+                      {!collapsed && (
+                        <button
+                          onClick={() => setXmlAssistOpen(!xmlAssistOpen)}
+                          className="rounded p-1 text-sidebar-foreground hover:bg-accent hover:text-foreground transition-colors"
+                        >
+                          {xmlAssistOpen ? (
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          ) : (
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    {xmlAssistOpen && !collapsed && (
+                      <div className="ml-4 mt-1 space-y-0.5">
+                        <button
+                          onClick={handleNewXmlSession}
+                          className="flex items-center gap-3 w-full rounded-lg px-3 py-1.5 text-sm transition-colors text-sidebar-foreground hover:bg-accent hover:text-foreground"
+                        >
+                          <Plus className="w-3.5 h-3.5 shrink-0" />
+                          <span>New Session</span>
+                        </button>
+                        {recentXmlSessions.length > 0 && (
+                          <>
+                            <Separator className="my-1" />
+                            {recentXmlSessions.map((session) => (
+                              <button
+                                key={session.id}
+                                onClick={() => handleXmlSessionClick(session.id)}
+                                className={cn(
+                                  'flex items-center gap-3 w-full rounded-lg px-3 py-1.5 text-sm transition-colors text-left',
+                                  session.id === activeXmlSessionId
+                                    ? 'text-foreground bg-accent font-medium'
+                                    : 'text-sidebar-foreground hover:bg-accent hover:text-foreground'
+                                )}
+                              >
+                                <FileCode2 className="w-3.5 h-3.5 shrink-0" />
+                                <span className="truncate">{session.displayName}</span>
                               </button>
                             ))}
                           </>

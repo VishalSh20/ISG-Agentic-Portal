@@ -260,3 +260,13 @@
 ::-webkit-scrollbar-thumb:hover {
   background: oklch(0.55 0 0 / 0.5);
 }
+
+/* XML syntax highlighting (used with dangerouslySetInnerHTML) */
+.xml-tag  { color: oklch(0.55 0.12 55); }
+.xml-attr { color: oklch(0.52 0.16 310); }
+.xml-val  { color: oklch(0.55 0.16 145); }
+.xml-eq   { color: oklch(0.55 0 0 / 0.5); }
+.dark .xml-tag  { color: oklch(0.75 0.12 55); }
+.dark .xml-attr { color: oklch(0.72 0.16 310); }
+.dark .xml-val  { color: oklch(0.68 0.16 145); }
+.dark .xml-eq   { color: oklch(0.6 0 0 / 0.5); }

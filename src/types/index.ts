@@ -1,5 +1,7 @@
 import { type LucideIcon } from 'lucide-react'
 
+export * from './xmlAssist'
+
 export interface Agent {
   id: string
   title: string
@@ -67,12 +69,11 @@ export interface ChatMessage {
 }
 
 export interface User {
-  keycloakId: string
+  id: string
   username: string
   email: string
   role: 'USER' | 'ADMIN'
   preferences: UserPreferences
-  loggedInAt: string
 }
 
 export interface UserPreferences {
