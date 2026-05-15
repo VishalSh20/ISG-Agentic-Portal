@@ -1,49 +1,71 @@
-import { useState } from 'react'
-import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
   Home,
   Store,
-  Settings,
   Bot,
   Server,
   GitBranch,
   MessageSquare,
   FileCode2,
   UserIcon,
-  ChevronDown,
-  ChevronRight,
-  PanelLeftClose,
-  PanelLeft,
   Plus,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import type { LucideIcon } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Separator } from '@/components/ui/separator'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/components/ui/resizable'
 import AppHeader from '@/components/layout/AppHeader'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { switchThread, startNewChat } from '@/store/slices/chatSlice'
 import { switchSession, startNewSession } from '@/store/slices/xmlAssistSlice'
-import type { NavItem } from '@/types'
 import { cn } from '@/lib/utils'
 
-const NAV_ITEMS: NavItem[] = [
-  { key: 'home', label: 'Home', icon: Home, path: '/' },
-  { key: 'marketplace', label: 'Marketplace', icon: Store, path: '/marketplace' },
-  {
-    key: 'config',
-    label: 'Configuration',
-    icon: Settings,
-    path: '/config',
-    children: [
-      { key: 'agents', label: 'Agents', icon: Bot, path: '/config/agents' },
-      { key: 'mcp-servers', label: 'MCP Servers', icon: Server, path: '/config/mcp-servers' },
-      { key: 'workflows', label: 'Workflows', icon: GitBranch, path: '/config/workflows' },
-    ],
-  },
-  { key: 'assistant', label: 'AI Assistant', icon: MessageSquare, path: '/assistant' },
-  { key: 'xml-assist', label: 'XML Assist', icon: FileCode2, path: '/xml-assist' },
-  { key: 'account', label: 'Account Settings', icon: UserIcon, path: '/account' },
+type SimpleItem = { label: string; icon: LucideIcon; path: string; end?: boolean }
+
+const NAVIGATE: SimpleItem[] = [
+  { label: 'Home', icon: Home, path: '/', end: true },
+  { label: 'Marketplace', icon: Store, path: '/marketplace' },
 ]
+
+const CONFIGURATION: SimpleItem[] = [
+  { label: 'Agents', icon: Bot, path: '/config/agents' },
+  { label: 'MCP Servers', icon: Server, path: '/config/mcp-servers' },
+  { label: 'Workflows', icon: GitBranch, path: '/config/workflows' },
+]
+
+const ACCOUNT: SimpleItem[] = [
+  { label: 'Account Settings', icon: UserIcon, path: '/account' },
+]
+
+const navItemClasses = ({ isActive }: { isActive: boolean }) =>
+  cn(
+    'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+    isActive
+      ? 'bg-accent text-foreground font-medium'
+      : 'text-sidebar-foreground hover:bg-accent/60 hover:text-foreground',
+  )
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="px-3 pt-4 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+      {children}
+    </div>
+  )
+}
+
+function NavRow({ item }: { item: SimpleItem }) {
+  const Icon = item.icon
+  return (
+    <NavLink to={item.path} end={item.end} className={navItemClasses}>
+      <Icon className="w-4 h-4 shrink-0" />
+      <span className="truncate">{item.label}</span>
+    </NavLink>
+  )
+}
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch()
@@ -55,31 +77,22 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const xmlSessions = useAppSelector((s) => s.xmlAssist.sessions)
   const activeXmlSessionId = useAppSelector((s) => s.xmlAssist.activeSessionId)
 
-  const [collapsed, setCollapsed] = useState(false)
-  const [configOpen, setConfigOpen] = useState(true)
-  const [assistantOpen, setAssistantOpen] = useState(false)
-  const [xmlAssistOpen, setXmlAssistOpen] = useState(false)
-  const location = useLocation()
+  const recentThreads = threads.slice(0, 6)
+  const recentXmlSessions = xmlSessions.slice(0, 6)
 
-  const recentThreads = threads.slice(0, 5)
-  const recentXmlSessions = xmlSessions.slice(0, 5)
-
-  const handleThreadClick = (threadId: string) => {
-    dispatch(switchThread(threadId))
+  const openThread = (id: string) => {
+    dispatch(switchThread(id))
     navigate('/assistant')
   }
-
-  const handleNewChat = () => {
+  const newChat = () => {
     dispatch(startNewChat())
     navigate('/assistant')
   }
-
-  const handleXmlSessionClick = (sessionId: string) => {
-    dispatch(switchSession(sessionId))
+  const openSession = (id: string) => {
+    dispatch(switchSession(id))
     navigate('/xml-assist')
   }
-
-  const handleNewXmlSession = () => {
+  const newSession = () => {
     dispatch(startNewSession())
     navigate('/xml-assist')
   }
@@ -88,246 +101,84 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     <div className={cn('flex flex-col h-screen', darkMode && 'dark')}>
       <AppHeader />
 
-      {/* ── Sidebar + page content ── */}
-      <div className="flex flex-1 min-h-0">
-        <aside
-          className={cn(
-            'flex flex-col border-r border-border bg-sidebar transition-all duration-200 shrink-0',
-            collapsed ? 'w-16' : 'w-64'
-          )}
+      <ResizablePanelGroup
+        orientation="horizontal"
+        id="appshell-layout"
+        className="flex-1 min-h-0"
+      >
+        <ResizablePanel
+          id="sidebar"
+          defaultSize={18}
+          minSize={14}
+          maxSize={32}
+          className="bg-sidebar"
         >
-          {/* Sidebar toggle */}
-          <div className="px-2 pt-3 pb-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setCollapsed((prev) => !prev)}
-              className="text-muted-foreground"
-            >
-              {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
-            </Button>
-          </div>
-          <Separator className="mb-2" />
+          <aside className="flex flex-col h-full">
+            <ScrollArea className="flex-1">
+              <nav
+                className="px-2 pb-2"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                <SectionLabel>Navigate</SectionLabel>
+                <div className="space-y-0.5">
+                  {NAVIGATE.map((i) => (
+                    <NavRow key={i.path} item={i} />
+                  ))}
+                </div>
 
-          {/* Nav */}
-          <nav className="flex-1 overflow-y-auto py-1 px-2 space-y-1" style={{ fontFamily: 'var(--font-heading)' }}>
-            {NAV_ITEMS.map((item) => {
-              // Configuration submenu
-              if (item.children) {
-                const isActive = location.pathname.startsWith('/config')
-                return (
-                  <div key={item.key}>
-                    <button
-                      onClick={() => setConfigOpen(!configOpen)}
-                      className={cn(
-                        'flex items-center gap-3 w-full rounded-lg px-3 py-2 text-sm transition-colors',
-                        isActive
-                          ? 'text-foreground bg-accent'
-                          : 'text-sidebar-foreground hover:bg-accent hover:text-foreground'
-                      )}
-                    >
-                      <item.icon className="w-4 h-4 shrink-0" />
-                      {!collapsed && (
-                        <>
-                          <span className="flex-1 text-left">{item.label}</span>
-                          {configOpen ? (
-                            <ChevronDown className="w-3.5 h-3.5" />
-                          ) : (
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          )}
-                        </>
-                      )}
-                    </button>
-                    {configOpen && !collapsed && (
-                      <div className="ml-4 mt-1 space-y-0.5">
-                        {item.children.map((child) => (
-                          <NavLink
-                            key={child.key}
-                            to={child.path}
-                            className={({ isActive }) =>
-                              cn(
-                                'flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors',
-                                isActive
-                                  ? 'text-foreground bg-accent font-medium'
-                                  : 'text-sidebar-foreground hover:bg-accent hover:text-foreground'
-                              )
-                            }
-                          >
-                            <child.icon className="w-3.5 h-3.5 shrink-0" />
-                            <span>{child.label}</span>
-                          </NavLink>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )
-              }
+                <SectionLabel>Workspaces</SectionLabel>
+                <div className="space-y-0.5">
+                  <WorkspaceGroup
+                    label="AI Assistant"
+                    icon={MessageSquare}
+                    path="/assistant"
+                    onNew={newChat}
+                    items={recentThreads.map((t) => ({
+                      id: t.id,
+                      label: t.title,
+                      active: t.id === activeThreadId,
+                      onClick: () => openThread(t.id),
+                      icon: MessageSquare,
+                    }))}
+                  />
+                  <WorkspaceGroup
+                    label="XML Assist"
+                    icon={FileCode2}
+                    path="/xml-assist"
+                    onNew={newSession}
+                    items={recentXmlSessions.map((s) => ({
+                      id: s.id,
+                      label: s.displayName,
+                      active: s.id === activeXmlSessionId,
+                      onClick: () => openSession(s.id),
+                      icon: FileCode2,
+                    }))}
+                  />
+                </div>
 
-              // AI Assistant with recent threads dropdown
-              if (item.key === 'assistant') {
-                const isActive = location.pathname === '/assistant'
-                return (
-                  <div key={item.key}>
-                    <div className="flex items-center">
-                      <NavLink
-                        to={item.path}
-                        end
-                        className={cn(
-                          'flex items-center gap-3 flex-1 rounded-lg px-3 py-2 text-sm transition-colors',
-                          isActive
-                            ? 'text-foreground bg-accent font-medium'
-                            : 'text-sidebar-foreground hover:bg-accent hover:text-foreground'
-                        )}
-                      >
-                        <item.icon className="w-4 h-4 shrink-0" />
-                        {!collapsed && <span className="flex-1 text-left">{item.label}</span>}
-                      </NavLink>
-                      {!collapsed && (
-                        <button
-                          onClick={() => setAssistantOpen(!assistantOpen)}
-                          className="rounded p-1 text-sidebar-foreground hover:bg-accent hover:text-foreground transition-colors"
-                        >
-                          {assistantOpen ? (
-                            <ChevronDown className="w-3.5 h-3.5" />
-                          ) : (
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          )}
-                        </button>
-                      )}
-                    </div>
-                    {assistantOpen && !collapsed && (
-                      <div className="ml-4 mt-1 space-y-0.5">
-                        <button
-                          onClick={handleNewChat}
-                          className="flex items-center gap-3 w-full rounded-lg px-3 py-1.5 text-sm transition-colors text-sidebar-foreground hover:bg-accent hover:text-foreground"
-                        >
-                          <Plus className="w-3.5 h-3.5 shrink-0" />
-                          <span>New Chat</span>
-                        </button>
-                        {recentThreads.length > 0 && (
-                          <>
-                            <Separator className="my-1" />
-                            {recentThreads.map((thread) => (
-                              <button
-                                key={thread.id}
-                                onClick={() => handleThreadClick(thread.id)}
-                                className={cn(
-                                  'flex items-center gap-3 w-full rounded-lg px-3 py-1.5 text-sm transition-colors text-left',
-                                  thread.id === activeThreadId
-                                    ? 'text-foreground bg-accent font-medium'
-                                    : 'text-sidebar-foreground hover:bg-accent hover:text-foreground'
-                                )}
-                              >
-                                <MessageSquare className="w-3.5 h-3.5 shrink-0" />
-                                <span className="truncate">{thread.title}</span>
-                              </button>
-                            ))}
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )
-              }
+                <SectionLabel>Configuration</SectionLabel>
+                <div className="space-y-0.5">
+                  {CONFIGURATION.map((i) => (
+                    <NavRow key={i.path} item={i} />
+                  ))}
+                </div>
 
-              // XML Assist with recent sessions dropdown
-              if (item.key === 'xml-assist') {
-                const isActive = location.pathname === '/xml-assist'
-                return (
-                  <div key={item.key}>
-                    <div className="flex items-center">
-                      <NavLink
-                        to={item.path}
-                        end
-                        className={cn(
-                          'flex items-center gap-3 flex-1 rounded-lg px-3 py-2 text-sm transition-colors',
-                          isActive
-                            ? 'text-foreground bg-accent font-medium'
-                            : 'text-sidebar-foreground hover:bg-accent hover:text-foreground'
-                        )}
-                      >
-                        <item.icon className="w-4 h-4 shrink-0" />
-                        {!collapsed && <span className="flex-1 text-left">{item.label}</span>}
-                      </NavLink>
-                      {!collapsed && (
-                        <button
-                          onClick={() => setXmlAssistOpen(!xmlAssistOpen)}
-                          className="rounded p-1 text-sidebar-foreground hover:bg-accent hover:text-foreground transition-colors"
-                        >
-                          {xmlAssistOpen ? (
-                            <ChevronDown className="w-3.5 h-3.5" />
-                          ) : (
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          )}
-                        </button>
-                      )}
-                    </div>
-                    {xmlAssistOpen && !collapsed && (
-                      <div className="ml-4 mt-1 space-y-0.5">
-                        <button
-                          onClick={handleNewXmlSession}
-                          className="flex items-center gap-3 w-full rounded-lg px-3 py-1.5 text-sm transition-colors text-sidebar-foreground hover:bg-accent hover:text-foreground"
-                        >
-                          <Plus className="w-3.5 h-3.5 shrink-0" />
-                          <span>New Session</span>
-                        </button>
-                        {recentXmlSessions.length > 0 && (
-                          <>
-                            <Separator className="my-1" />
-                            {recentXmlSessions.map((session) => (
-                              <button
-                                key={session.id}
-                                onClick={() => handleXmlSessionClick(session.id)}
-                                className={cn(
-                                  'flex items-center gap-3 w-full rounded-lg px-3 py-1.5 text-sm transition-colors text-left',
-                                  session.id === activeXmlSessionId
-                                    ? 'text-foreground bg-accent font-medium'
-                                    : 'text-sidebar-foreground hover:bg-accent hover:text-foreground'
-                                )}
-                              >
-                                <FileCode2 className="w-3.5 h-3.5 shrink-0" />
-                                <span className="truncate">{session.displayName}</span>
-                              </button>
-                            ))}
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )
-              }
+                <SectionLabel>Account</SectionLabel>
+                <div className="space-y-0.5">
+                  {ACCOUNT.map((i) => (
+                    <NavRow key={i.path} item={i} />
+                  ))}
+                </div>
+              </nav>
+            </ScrollArea>
 
-              // Regular nav items
-              return (
-                <NavLink
-                  key={item.key}
-                  to={item.path}
-                  end={item.path === '/'}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
-                      isActive
-                        ? 'text-foreground bg-accent font-medium'
-                        : 'text-sidebar-foreground hover:bg-accent hover:text-foreground'
-                    )
-                  }
-                >
-                  <item.icon className="w-4 h-4 shrink-0" />
-                  {!collapsed && <span>{item.label}</span>}
-                </NavLink>
-              )
-            })}
-          </nav>
-
-          {/* User section at bottom */}
-          <div className="border-t border-border p-3">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                  {user?.username?.charAt(0).toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              {!collapsed && (
+            <div className="border-t border-border p-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <Avatar className="h-8 w-8 shrink-0">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                    {user?.username?.charAt(0).toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">
                     {user?.username || 'User'}
@@ -336,16 +187,84 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     {user?.email || 'user@cognizant.com'}
                   </p>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
-        </aside>
+          </aside>
+        </ResizablePanel>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto min-w-0">
-          {children}
-        </main>
+        <ResizableHandle withHandle />
+
+        <ResizablePanel id="content" defaultSize={82} minSize={50}>
+          <main className="h-full overflow-y-auto">{children}</main>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
+  )
+}
+
+type WorkspaceItem = {
+  id: string
+  label: string
+  active: boolean
+  onClick: () => void
+  icon: LucideIcon
+}
+
+function WorkspaceGroup({
+  label,
+  icon: Icon,
+  path,
+  onNew,
+  items,
+}: {
+  label: string
+  icon: LucideIcon
+  path: string
+  onNew: () => void
+  items: WorkspaceItem[]
+}) {
+  return (
+    <div className="space-y-0.5">
+      <div className="flex items-center group">
+        <NavLink
+          to={path}
+          end
+          className={({ isActive }) => cn(navItemClasses({ isActive }), 'flex-1')}
+        >
+          <Icon className="w-4 h-4 shrink-0" />
+          <span className="flex-1 truncate text-left">{label}</span>
+        </NavLink>
+        <button
+          onClick={onNew}
+          aria-label={`New ${label}`}
+          className="ml-1 rounded-md p-1.5 text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-accent hover:text-foreground transition-opacity"
+        >
+          <Plus className="w-3.5 h-3.5" />
+        </button>
       </div>
+
+      {items.length > 0 && (
+        <div className="ml-3 border-l border-border/60 pl-2 space-y-0.5">
+          {items.map((it) => {
+            const ItemIcon = it.icon
+            return (
+              <button
+                key={it.id}
+                onClick={it.onClick}
+                className={cn(
+                  'flex items-center gap-2 w-full rounded-md px-2.5 py-1.5 text-xs text-left transition-colors',
+                  it.active
+                    ? 'bg-accent text-foreground font-medium'
+                    : 'text-sidebar-foreground hover:bg-accent/60 hover:text-foreground',
+                )}
+              >
+                <ItemIcon className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{it.label}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
