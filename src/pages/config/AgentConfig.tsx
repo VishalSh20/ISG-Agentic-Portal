@@ -68,6 +68,7 @@ export default function AgentConfig() {
   ])
   const [card, setCard] = useState<AgentCard | null>(null)
   const [fetching, setFetching] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const MAX_HEADERS = 5
@@ -77,7 +78,20 @@ export default function AgentConfig() {
     setHeaderRows([{ key: '', value: '' }])
     setCard(null)
     setFetching(false)
+    setSaving(false)
     setError(null)
+  }
+
+  const normalizeUrl = (u: string) => u.trim().replace(/\/$/, '').toLowerCase()
+
+  const findDuplicate = (incomingCardUrl: string, incomingAgentUrl: string) => {
+    const card = normalizeUrl(incomingCardUrl)
+    const self = normalizeUrl(incomingAgentUrl)
+    return agents.find(
+      (a) =>
+        (a.cardUrl && normalizeUrl(a.cardUrl) === card) ||
+        (a.url && self && normalizeUrl(a.url) === self),
+    )
   }
 
   const buildHeaders = (): Record<string, string> => {
@@ -126,14 +140,21 @@ export default function AgentConfig() {
   }
 
   const handleSave = async () => {
-    if (!card) return
+    if (!card || saving) return
+    const agentUrl = card.url || cardUrl
+    const duplicate = findDuplicate(cardUrl, agentUrl)
+    if (duplicate) {
+      setError(`This agent is already added as "${duplicate.title}".`)
+      return
+    }
     const headers = buildHeaders()
+    setSaving(true)
     try {
       await dispatch(
         createAgent({
           title: card.name,
           description: card.description,
-          url: card.url || cardUrl,
+          url: agentUrl,
           skills: card.skills ?? [],
           enabled: true,
           cardUrl,
@@ -145,7 +166,13 @@ export default function AgentConfig() {
       resetDialog()
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed to save agent'
-      toast.error(msg)
+      const friendly = /duplicate key|agents_card_url_unique|agents_url_unique_idx/.test(msg)
+        ? 'This agent is already added.'
+        : msg
+      setError(friendly)
+      toast.error(friendly)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -228,6 +255,7 @@ export default function AgentConfig() {
       <Dialog
         open={dialogOpen}
         onOpenChange={(open) => {
+          if (saving) return
           setDialogOpen(open)
           if (!open) resetDialog()
         }}
@@ -238,12 +266,13 @@ export default function AgentConfig() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Agent card URL</Label>
+              <Label>Card URL</Label>
               <div className="flex gap-2">
                 <Input
                   value={cardUrl}
                   onChange={(e) => setCardUrl(e.target.value)}
-                  placeholder="Enter the agent card url"
+                  placeholder="https://host/path/to/agent-card.json"
+                  disabled={saving}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault()
@@ -251,27 +280,32 @@ export default function AgentConfig() {
                     }
                   }}
                 />
-                <Button type="button" variant="secondary" onClick={handleFetch} disabled={fetching}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleFetch}
+                  disabled={fetching || saving}
+                >
                   {fetching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                   <span className="ml-2">Fetch</span>
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Full URL to the agent card. Generic A2A agents typically expose it at <code>/.well-known/agent-card.json</code>.
+                Usually <code>/.well-known/agent-card.json</code>.
               </p>
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>Headers (optional)</Label>
+                <Label>Auth headers (optional)</Label>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   onClick={addHeaderRow}
-                  disabled={headerRows.length >= MAX_HEADERS}
+                  disabled={headerRows.length >= MAX_HEADERS || saving}
                 >
-                  <Plus className="w-3.5 h-3.5 mr-1" /> Add header
+                  <Plus className="w-3.5 h-3.5 mr-1" /> Add
                 </Button>
               </div>
               <div className="space-y-2">
@@ -280,7 +314,8 @@ export default function AgentConfig() {
                     <Input
                       value={row.key}
                       onChange={(e) => updateHeader(i, 'key', e.target.value)}
-                      placeholder="Header name"
+                      placeholder="Name"
+                      disabled={saving}
                       className="flex-1"
                     />
                     <Input
@@ -289,6 +324,7 @@ export default function AgentConfig() {
                       placeholder="Value"
                       type="password"
                       autoComplete="off"
+                      disabled={saving}
                       className="flex-1"
                     />
                     <Button
@@ -296,6 +332,7 @@ export default function AgentConfig() {
                       variant="ghost"
                       size="icon"
                       onClick={() => removeHeaderRow(i)}
+                      disabled={saving}
                       aria-label="Remove header"
                     >
                       <X className="w-4 h-4" />
@@ -304,7 +341,7 @@ export default function AgentConfig() {
                 ))}
               </div>
               <p className="text-xs text-muted-foreground">
-                Up to {MAX_HEADERS} headers. Used for auth on agents that protect the card endpoint.
+                Up to {MAX_HEADERS}. Sent only to fetch the card.
               </p>
             </div>
 
@@ -334,11 +371,18 @@ export default function AgentConfig() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={!card}>
-              Add Agent
+            <Button onClick={handleSave} disabled={!card || saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Adding…
+                </>
+              ) : (
+                'Add Agent'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
