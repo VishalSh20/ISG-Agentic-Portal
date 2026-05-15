@@ -1,10 +1,13 @@
+import type { AgentSkill } from './index'
+
 export interface AgentFormData {
   title: string
   description: string
   url: string
-  healthEndpoint: string
-  capabilities: string[]
-  category?: string
+  skills?: AgentSkill[]
+  enabled?: boolean
+  cardUrl: string
+  headers?: Record<string, string>
 }
 
 export interface MCPServerFormData {

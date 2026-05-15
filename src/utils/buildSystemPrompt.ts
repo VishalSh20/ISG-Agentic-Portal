@@ -5,8 +5,9 @@ export function buildSystemPrompt(agent: Agent, workflow?: Workflow): string {
 
   parts.push(`You are ${agent.title}. ${agent.description}`)
 
-  if (agent.capabilities.length > 0) {
-    parts.push(`Your capabilities: ${agent.capabilities.join(', ')}`)
+  if (agent.skills && agent.skills.length > 0) {
+    const skillLine = agent.skills.map((s) => s.name).join(', ')
+    parts.push(`Your skills: ${skillLine}`)
   }
 
   if (workflow && workflow.steps.length > 0) {

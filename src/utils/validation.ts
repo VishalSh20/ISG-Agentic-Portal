@@ -1,4 +1,4 @@
-import type { AgentFormData, MCPServerFormData, WorkflowFormData } from '@/types/forms'
+import type { MCPServerFormData, WorkflowFormData } from '@/types/forms'
 
 function isValidUrl(str: string): boolean {
   try {
@@ -7,14 +7,6 @@ function isValidUrl(str: string): boolean {
   } catch {
     return false
   }
-}
-
-export function validateAgent(data: AgentFormData): string[] {
-  const errors: string[] = []
-  if (!data.title || data.title.trim().length === 0) errors.push('Title is required')
-  if (data.title && data.title.length > 100) errors.push('Title must be 100 characters or less')
-  if (!data.url || !isValidUrl(data.url)) errors.push('A valid URL is required')
-  return errors
 }
 
 export function validateMCPServer(data: MCPServerFormData): string[] {

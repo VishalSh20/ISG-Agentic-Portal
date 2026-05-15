@@ -2,15 +2,37 @@ import { type LucideIcon } from 'lucide-react'
 
 export * from './xmlAssist'
 
+export interface AgentSkill {
+  id?: string
+  name: string
+  description: string
+  tags?: string[]
+  examples?: string[]
+}
+
+export interface AgentCard {
+  name: string
+  description: string
+  url: string
+  version?: string
+  protocolVersion?: string
+  preferredTransport?: string
+  capabilities?: Record<string, unknown>
+  defaultInputModes?: string[]
+  defaultOutputModes?: string[]
+  skills?: AgentSkill[]
+}
+
 export interface Agent {
   id: string
   title: string
   description: string
   url: string
-  healthEndpoint: string
   status: 'online' | 'offline' | 'unknown'
-  capabilities: string[]
-  category?: string
+  skills?: AgentSkill[]
+  enabled?: boolean
+  cardUrl: string
+  headers?: Record<string, string>
   createdAt: string
   updatedAt: string
 }

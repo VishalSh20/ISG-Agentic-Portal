@@ -13,7 +13,7 @@ import AccountSettings from '@/pages/AccountSettings'
 import Auth from '@/pages/Auth'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { restoreSession } from '@/store/slices/authSlice'
-import { fetchAgents } from '@/store/slices/agentsSlice'
+import { fetchAgents, refreshAllAgents } from '@/store/slices/agentsSlice'
 import { fetchServers } from '@/store/slices/mcpServersSlice'
 import { Loader2 } from 'lucide-react'
 
@@ -32,9 +32,14 @@ function AppContent() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      dispatch(fetchAgents()).unwrap().catch(() => {
-        seedDemoData(dispatch)
-      })
+      dispatch(fetchAgents())
+        .unwrap()
+        .then(() => {
+          dispatch(refreshAllAgents())
+        })
+        .catch(() => {
+          seedDemoData(dispatch)
+        })
       dispatch(fetchServers())
     }
   }, [isAuthenticated, dispatch])
