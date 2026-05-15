@@ -1,3 +1,4 @@
+import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@/types'
 
@@ -48,6 +49,20 @@ export async function getProfile(userId: string): Promise<{ username: string; ro
     .single()
   if (error) throw error
   return { username: data.username, role: data.role as 'USER' | 'ADMIN' }
+}
+
+/**
+ * Subscribe to supabase auth state. Invokes `onSessionChange` for every event
+ * with the latest session (null when signed out / token lost). Returns an
+ * unsubscribe function.
+ */
+export function subscribeAuthChanges(
+  onSessionChange: (session: Session | null) => void,
+): () => void {
+  const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+    onSessionChange(session)
+  })
+  return () => data.subscription.unsubscribe()
 }
 
 export function buildUser(

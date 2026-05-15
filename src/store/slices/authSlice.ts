@@ -66,6 +66,9 @@ const authSlice = createSlice({
       state.accessToken = null
       state.loading = false
     },
+    syncAccessToken(state, action: PayloadAction<string>) {
+      state.accessToken = action.payload
+    },
     updatePreferences(state, action: PayloadAction<Partial<UserPreferences>>) {
       if (state.user) {
         state.user.preferences = { ...state.user.preferences, ...action.payload }
@@ -80,10 +83,18 @@ const authSlice = createSlice({
           state.user = action.payload.user
           state.isAuthenticated = true
           state.accessToken = action.payload.token
+        } else {
+          // Supabase has no session — clear any stale persisted auth.
+          state.user = null
+          state.isAuthenticated = false
+          state.accessToken = null
         }
         state.loading = false
       })
       .addCase(restoreSession.rejected, (state) => {
+        state.user = null
+        state.isAuthenticated = false
+        state.accessToken = null
         state.loading = false
       })
       // loginUser
@@ -109,5 +120,5 @@ const authSlice = createSlice({
   },
 })
 
-export const { setAuth, clearAuth, updatePreferences } = authSlice.actions
+export const { setAuth, clearAuth, syncAccessToken, updatePreferences } = authSlice.actions
 export default authSlice.reducer

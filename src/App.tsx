@@ -12,7 +12,8 @@ import XmlAssist from '@/pages/XmlAssist'
 import AccountSettings from '@/pages/AccountSettings'
 import Auth from '@/pages/Auth'
 import { useAppDispatch, useAppSelector } from '@/store'
-import { restoreSession } from '@/store/slices/authSlice'
+import { restoreSession, clearAuth, syncAccessToken } from '@/store/slices/authSlice'
+import { subscribeAuthChanges } from '@/api/auth'
 import { fetchAgents, refreshAllAgents } from '@/store/slices/agentsSlice'
 import { fetchServers } from '@/store/slices/mcpServersSlice'
 import { Loader2 } from 'lucide-react'
@@ -28,6 +29,14 @@ function AppContent() {
 
   useEffect(() => {
     dispatch(restoreSession())
+    const unsubscribe = subscribeAuthChanges((session) => {
+      if (!session) {
+        dispatch(clearAuth())
+      } else {
+        dispatch(syncAccessToken(session.access_token))
+      }
+    })
+    return unsubscribe
   }, [dispatch])
 
   useEffect(() => {
