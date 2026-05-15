@@ -237,9 +237,11 @@ export default function AgentConfig() {
                 )}
 
                 {agent.skills && agent.skills.length > 0 && (
-                  <div className="space-y-2 mt-1">
-                    <p className="text-xs font-medium text-foreground">Skills</p>
-                    <div className="space-y-2">
+                  <div className="space-y-2 mt-1 min-h-0 flex flex-col">
+                    <p className="text-xs font-medium text-foreground">
+                      Skills <span className="text-muted-foreground font-normal">({agent.skills.length})</span>
+                    </p>
+                    <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                       {agent.skills.map((skill, i) => (
                         <SkillBlock key={skill.id ?? `${skill.name}-${i}`} skill={skill} />
                       ))}
@@ -260,11 +262,11 @@ export default function AgentConfig() {
           if (!open) resetDialog()
         }}
       >
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col gap-0 p-0">
+          <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
             <DialogTitle>Add Agent</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto px-6 py-4 flex-1 min-h-0">
             <div className="space-y-2">
               <Label>Card URL</Label>
               <div className="flex gap-2">
@@ -359,8 +361,10 @@ export default function AgentConfig() {
                 </div>
                 {card.skills && card.skills.length > 0 && (
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Skills</p>
-                    <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">
+                      Skills <span className="normal-case">({card.skills.length})</span>
+                    </p>
+                    <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                       {card.skills.map((skill, i) => (
                         <SkillBlock key={skill.id ?? `${skill.name}-${i}`} skill={skill} />
                       ))}
@@ -370,7 +374,7 @@ export default function AgentConfig() {
               </div>
             )}
           </div>
-          <DialogFooter>
+          <DialogFooter className="px-6 pb-6 pt-2 shrink-0 border-t border-border">
             <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
               Cancel
             </Button>
